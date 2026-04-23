@@ -20,6 +20,18 @@ Domínio: Ciência de Dados Aplicada à Defesa e Consciência Situacional.
 - [`GOVERNANCA.md`](GOVERNANCA.md) — Arquitetura de Governança Central (V.1.0)
 - [`CLAUDE.md`](CLAUDE.md) — Especificação Técnica Ativa (Lei do Projeto)
 
+## Sistema de Gerência de Skills
+
+Estrutura criada com base no toolkit da imagem solicitada:
+
+- **Core Toolkit:** `docx`, `xlsx`, `pdf`, `pdf-reading`, `pptx`, `frontend-design`, `file-reading`
+- **Power-User:** `skill-creator`, `mcp-builder`, `web-artifacts-builder`
+
+Arquivos:
+- `skills/<skill-id>/SKILL.md`
+- `vanguard/services/skill-manager/skill_manager.py` (registro e validação)
+- `vanguard/tests/test_skill_manager.py`
+
 ## Início Rápido
 
 ```bash
