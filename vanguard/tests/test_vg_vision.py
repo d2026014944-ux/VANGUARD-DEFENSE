@@ -61,3 +61,33 @@ def test_normalize_raw_detection_clips_values_to_valid_range():
     assert normalized.confidence == 1.0
     assert normalized.x == 0.0
     assert normalized.width == 1.0
+
+
+def test_infer_uses_onnx_session_and_normalizes_raw_output():
+    detector = ONNXEdgeDetector("student.onnx")
+
+    class _Input:
+        name = "input_0"
+
+    class _FakeSession:
+        def get_inputs(self):
+            return [_Input()]
+
+        def run(self, _, __):
+            return [[
+                {
+                    "class": "person",
+                    "confidence": 0.8,
+                    "x": 0.1,
+                    "y": 0.2,
+                    "width": 0.3,
+                    "height": 0.4,
+                    "lat": -22.1,
+                    "lon": -43.2,
+                }
+            ]]
+
+    detector._session = _FakeSession()
+    detections = detector.infer(frame="fake-frame")
+    assert len(detections) == 1
+    assert detections[0].class_name == "person"

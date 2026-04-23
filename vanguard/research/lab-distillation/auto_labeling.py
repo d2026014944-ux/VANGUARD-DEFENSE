@@ -21,7 +21,8 @@ class GeoLabel:
 class GroundingDinoAutoLabeler:
     """
     Auto-labeling Teacher pipeline.
-    A inferência real deve ser conectada ao pacote groundingdino no ambiente GPU.
+    Current scope: filter and normalize pre-computed detections for persistence.
+    Target scope: connect actual inference to the groundingdino package in GPU environment.
     """
 
     def __init__(self, confidence_threshold: float = 0.35):

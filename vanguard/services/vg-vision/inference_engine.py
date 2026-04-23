@@ -30,7 +30,7 @@ class BoundingBox:
 
 
 class HardwareCompatibilityPolicy:
-    """Política de runtime por alvo de hardware para Edge."""
+    """Runtime policy by hardware target for Edge inference."""
 
     TARGET_RUNTIME = {
         "nvidia": "onnxruntime",
@@ -46,7 +46,7 @@ class HardwareCompatibilityPolicy:
 
 
 class ONNXEdgeDetector:
-    """Detecção Edge com ONNX Runtime como caminho padrão."""
+    """Edge detection with ONNX Runtime as the default path."""
 
     def __init__(self, model_path: str | Path):
         self.model_path = Path(model_path)
@@ -61,7 +61,7 @@ class ONNXEdgeDetector:
             import onnxruntime as ort  # type: ignore
         except ImportError as exc:
             raise RuntimeError(
-                "onnxruntime não está instalado. Instale para inferência real."
+                "onnxruntime is not installed. Install it for actual inference."
             ) from exc
         self._session = ort.InferenceSession(str(self.model_path), providers=["CPUExecutionProvider"])
         return self._session
@@ -86,13 +86,20 @@ class ONNXEdgeDetector:
     def format_detections_json(self, detections: list[BoundingBox]) -> list[dict[str, Any]]:
         return [d.to_contract_dict() for d in detections]
 
-    def infer(self, _: Any) -> list[BoundingBox]:
+    def infer(self, frame: Any) -> list[BoundingBox]:
         """
-        Caminho de inferência real via ONNX Runtime.
-        O pós-processamento específico de modelo deve transformar a saída para raw detections.
+        Executes ONNX Runtime inference path.
+        Model-specific post-processing must convert runtime output into raw detections.
         """
-        self._ensure_session()
-        return []
+        session = self._ensure_session()
+        input_name = session.get_inputs()[0].name
+        outputs = session.run(None, {input_name: frame})
+        raw_detections = outputs[0] if outputs else []
+        detections: list[BoundingBox] = []
+        for raw in raw_detections:
+            if isinstance(raw, dict):
+                detections.append(self.normalize_raw_detection(raw))
+        return detections
 
 
 def export_contract_payload(detections: list[BoundingBox]) -> list[dict[str, Any]]:

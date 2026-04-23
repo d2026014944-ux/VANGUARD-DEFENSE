@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 from dataclasses import asdict, dataclass
 from pathlib import Path
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -34,7 +38,13 @@ class QuantizationResult:
 
 
 class INT8QuantizationPipeline:
-    """Pipeline de quantização INT8 para modelos ONNX do estudante."""
+    """
+    INT8 quantization pipeline for ONNX student models.
+
+    Note: at this stage, INT8 artifact generation is a placeholder file copy
+    to preserve traceability and benchmarking. In production, replace with real
+    ONNX Runtime quantization/TensorRT while keeping the same acceptance criteria.
+    """
 
     def __init__(self, criteria: QuantizationAcceptanceCriteria):
         self.criteria = criteria
@@ -46,11 +56,11 @@ class INT8QuantizationPipeline:
         return ((before - after) / before) * 100.0
 
     def evaluate(self, metrics: BenchmarkMetrics) -> QuantizationResult:
-        accuracy_drop = max(0.0, metrics.baseline_accuracy - metrics.quantized_accuracy)
+        accuracy_change_pct = abs(metrics.baseline_accuracy - metrics.quantized_accuracy) * 100.0
         memory_reduction = self._pct_delta(metrics.baseline_memory_mb, metrics.quantized_memory_mb)
         latency_improvement = self._pct_delta(metrics.baseline_latency_ms, metrics.quantized_latency_ms)
         accepted = (
-            accuracy_drop <= self.criteria.max_accuracy_drop_pct
+            accuracy_change_pct <= self.criteria.max_accuracy_drop_pct
             and memory_reduction >= self.criteria.min_memory_reduction_pct
             and latency_improvement >= self.criteria.min_latency_improvement_pct
         )
@@ -58,7 +68,7 @@ class INT8QuantizationPipeline:
             quantized_model_path="",
             metadata_path="",
             accepted=accepted,
-            accuracy_drop_pct=accuracy_drop,
+            accuracy_drop_pct=accuracy_change_pct,
             memory_reduction_pct=memory_reduction,
             latency_improvement_pct=latency_improvement,
         )
@@ -78,8 +88,9 @@ class INT8QuantizationPipeline:
         quantized_path = out_dir / f"{source.stem}.int8.onnx"
         metadata_path = out_dir / f"{source.stem}.int8.benchmark.json"
 
-        # Placeholder de produção de artefato INT8.
-        # Em ambiente de laboratório, substituir por quantização real ORT/TensorRT.
+        logger.warning(
+            "Using placeholder INT8 generation by file copy; replace with real ORT/TensorRT quantization."
+        )
         shutil.copyfile(source, quantized_path)
 
         evaluated = self.evaluate(metrics)

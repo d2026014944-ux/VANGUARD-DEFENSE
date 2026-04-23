@@ -147,8 +147,9 @@ class VGCoreConverter:
 
     def validate_cot_xml_contract(self, xml_str: str) -> bool:
         """
-        Validação de contrato obrigatória antes do envio para VG-COMM.
-        Garante estrutura mínima do CoT e faixas válidas de coordenadas.
+        Mandatory contract validation before VG-COMM dispatch.
+        Prioritizes full XSD validation when `lxml` is available;
+        otherwise performs structural and semantic fallback validation.
         """
         if not self.CONTRACT_XSD_PATH.exists():
             logger.error("Contrato XSD não encontrado em %s", self.CONTRACT_XSD_PATH)
@@ -159,6 +160,26 @@ class VGCoreConverter:
         except ET.ParseError as exc:
             logger.error("Contrato XSD inválido: %s", exc)
             return False
+
+        try:
+            from lxml import etree as lxml_etree  # type: ignore
+        except ImportError:
+            logger.debug("lxml unavailable; using structural CoT validation fallback.")
+        else:
+            try:
+                xsd_doc = lxml_etree.parse(str(self.CONTRACT_XSD_PATH))
+                schema = lxml_etree.XMLSchema(xsd_doc)
+                xml_doc = lxml_etree.fromstring(xml_str.encode("utf-8"))
+                if not schema.validate(xml_doc):
+                    return False
+            except (
+                lxml_etree.XMLSyntaxError,
+                lxml_etree.XMLSchemaParseError,
+                lxml_etree.DocumentInvalid,
+                ValueError,
+            ) as exc:
+                logger.error("XSD validation failure with lxml: %s", exc)
+                return False
 
         try:
             root = ET.fromstring(xml_str)
@@ -183,12 +204,12 @@ class VGCoreConverter:
                 return False
 
         try:
-            lat = float(point.get("lat", "nan"))
-            lon = float(point.get("lon", "nan"))
-            float(point.get("hae", "nan"))
-            float(point.get("ce", "nan"))
-            float(point.get("le", "nan"))
-        except ValueError:
+            lat = float(point.get("lat"))
+            lon = float(point.get("lon"))
+            float(point.get("hae"))
+            float(point.get("ce"))
+            float(point.get("le"))
+        except (TypeError, ValueError):
             return False
 
         if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):

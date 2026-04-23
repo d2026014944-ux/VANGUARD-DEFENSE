@@ -254,3 +254,38 @@ class TestConvertPipeline:
         )
         xml_str = converter.cot_packet_to_xml(packet)
         assert converter.validate_cot_xml_contract(xml_str) is False
+
+    def test_validate_cot_contract_rejects_missing_event_attribute(self, converter):
+        packet = converter.detection_to_cot_packet(
+            BoundingBox("person", 0.9, 0.1, 0.1, 0.1, 0.1, lat=-22.0, lon=-43.0)
+        )
+        xml_str = converter.cot_packet_to_xml(packet)
+        root = ET.fromstring(xml_str)
+        root.attrib.pop("uid")
+        assert converter.validate_cot_xml_contract(ET.tostring(root, encoding="unicode")) is False
+
+    def test_validate_cot_contract_rejects_missing_detail_contact_callsign(self, converter):
+        packet = converter.detection_to_cot_packet(
+            BoundingBox("person", 0.9, 0.1, 0.1, 0.1, 0.1, lat=-22.0, lon=-43.0)
+        )
+        xml_str = converter.cot_packet_to_xml(packet)
+        root = ET.fromstring(xml_str)
+        detail = root.find("detail")
+        contact = detail.find("contact")
+        contact.attrib.pop("callsign")
+        assert converter.validate_cot_xml_contract(ET.tostring(root, encoding="unicode")) is False
+
+    def test_validate_cot_contract_rejects_malformed_xml(self, converter):
+        assert converter.validate_cot_xml_contract("<event><point></event>") is False
+
+    def test_validate_cot_contract_rejects_when_xsd_missing(self, converter, tmp_path):
+        original_path = converter.CONTRACT_XSD_PATH
+        converter.CONTRACT_XSD_PATH = tmp_path / "missing-cot-event.xsd"
+        try:
+            packet = converter.detection_to_cot_packet(
+                BoundingBox("person", 0.9, 0.1, 0.1, 0.1, 0.1, lat=-22.0, lon=-43.0)
+            )
+            xml_str = converter.cot_packet_to_xml(packet)
+            assert converter.validate_cot_xml_contract(xml_str) is False
+        finally:
+            converter.CONTRACT_XSD_PATH = original_path
