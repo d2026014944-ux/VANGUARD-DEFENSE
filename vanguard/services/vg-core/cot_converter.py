@@ -58,6 +58,9 @@ class VGCoreConverter:
         "unknown":  "a-u-G",      # unknown ground
     }
     DEFAULT_COT_TYPE = "a-u-G"
+    # ATAK/CoT convention for unknown CE/LE uses a very high sentinel value.
+    # Mantemos 9999999.0 para indicar "erro de localização desconhecido".
+    UNKNOWN_ERROR_VALUE = 9999999.0
 
     def __init__(self, stale_seconds: int = 30):
         self.stale_seconds = stale_seconds
@@ -123,8 +126,8 @@ class VGCoreConverter:
         point.set("lat", f"{packet.lat:.7f}")
         point.set("lon", f"{packet.lon:.7f}")
         point.set("hae", f"{packet.hae:.2f}")
-        point.set("ce", "9999999.0")   # circular error (desconhecido)
-        point.set("le", "9999999.0")   # linear error (desconhecido)
+        point.set("ce", str(self.UNKNOWN_ERROR_VALUE))   # circular error (desconhecido)
+        point.set("le", str(self.UNKNOWN_ERROR_VALUE))   # linear error (desconhecido)
 
         detail = ET.SubElement(event, "detail")
         remarks = ET.SubElement(detail, "remarks")

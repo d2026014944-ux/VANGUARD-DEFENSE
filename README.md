@@ -41,6 +41,9 @@ pip install -r requirements-dev.txt
 # Executar testes
 pytest vanguard/tests/ -v
 
+# Configurar variáveis de ambiente locais
+cp .env.example .env
+
 # Subir ambiente de laboratório (requer NVIDIA Docker)
 docker-compose up vg-lab
 ```
