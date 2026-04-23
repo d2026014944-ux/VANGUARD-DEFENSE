@@ -1,0 +1,116 @@
+version: "3.9"
+
+# ============================================================
+# VANGUARD — Docker Compose — Ambiente de Laboratório (V.1.0)
+# Anti-Vibe Coding: todos os serviços rodam isolados.
+# Requer: NVIDIA Container Toolkit instalado no host.
+# ============================================================
+
+services:
+
+  # ----------------------------------------------------------
+  # VG-LAB: Sandbox de Treinamento (Teacher Model)
+  # Roda o modelo Professor (Grounding DINO) com acesso à GPU.
+  # AI-Jail: acesso restrito apenas ao volume de dados.
+  # ----------------------------------------------------------
+  vg-lab:
+    image: nvcr.io/nvidia/pytorch:24.01-py3
+    container_name: vanguard-vg-lab
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ./vanguard/research/lab-distillation:/workspace/lab
+      - vg-lab-data:/workspace/data
+    networks:
+      - vg-lab-net
+    working_dir: /workspace/lab
+    command: ["python", "-m", "pytest", "tests/", "-v"]
+    # Nota: Para treinamento interativo, sobrescreva o command:
+    # command: ["bash"]
+
+  # ----------------------------------------------------------
+  # VG-CORE + VG-COMM: Serviços Táticos
+  # ----------------------------------------------------------
+  vg-core:
+    build:
+      context: ./vanguard/services/vg-core
+      dockerfile: Dockerfile
+    container_name: vanguard-vg-core
+    networks:
+      - vg-tactical-net
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - freetakserver
+
+  vg-comm:
+    build:
+      context: ./vanguard/services/vg-comm
+      dockerfile: Dockerfile
+    container_name: vanguard-vg-comm
+    networks:
+      - vg-tactical-net
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - vg-core
+
+  # ----------------------------------------------------------
+  # FreeTAKServer: Servidor ATAK para testes de integração CoT
+  # Rede isolada para evitar exposição acidental.
+  # ----------------------------------------------------------
+  freetakserver:
+    image: freetakteam/freetakserver:1.9.9
+    container_name: vanguard-freetakserver
+    ports:
+      - "8087:8087/tcp"   # CoT TCP
+      - "8088:8088/udp"   # CoT UDP
+      - "19023:19023/tcp" # API REST
+    networks:
+      - vg-tactical-net
+    volumes:
+      - freetakserver-data:/opt/FreeTAKServer
+    environment:
+      - FTS_CONNECTION_MESSAGE=VANGUARD-FTS-NODE
+      - FTS_FIRST_START=true
+
+  # ----------------------------------------------------------
+  # PostgreSQL — FTS-Core (Layer 1)
+  # ----------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: vanguard-postgres
+    environment:
+      POSTGRES_DB: vanguard_fts
+      POSTGRES_USER: vanguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_env}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - vg-lab-net
+    ports:
+      - "5432:5432"
+
+# ----------------------------------------------------------
+# Volumes nomeados (dados persistentes isolados)
+# ----------------------------------------------------------
+volumes:
+  vg-lab-data:
+    driver: local
+  freetakserver-data:
+    driver: local
+  postgres-data:
+    driver: local
+
+# ----------------------------------------------------------
+# Redes isoladas por domínio
+# vg-lab-net: treinamento e banco de dados (sem acesso tático)
+# vg-tactical-net: serviços táticos + FreeTAKServer
+# ----------------------------------------------------------
+networks:
+  vg-lab-net:
+    driver: bridge
+  vg-tactical-net:
+    driver: bridge
