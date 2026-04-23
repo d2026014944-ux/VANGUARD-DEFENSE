@@ -1,54 +1,131 @@
 # 🛡️ VANGUARD-DEFENSE
-**Vision, Analytics & Next-Generation Units for Reconnaissance and Defense**
 
-Projeto de Iniciação Científica — UNIFEI
-Domínio: Ciência de Dados Aplicada à Defesa e Consciência Situacional.
+<p align="center">
+  <b>Vision, Analytics & Next-Generation Units for Reconnaissance and Defense</b><br/>
+  Plataforma de consciência situacional para Edge AI + CoT/ATAK + comunicação tática híbrida.
+</p>
+
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white"/>
+  <img alt="Tests" src="https://img.shields.io/badge/tests-pytest-0A9EDC?logo=pytest&logoColor=white"/>
+  <img alt="Architecture" src="https://img.shields.io/badge/architecture-monorepo-6C63FF"/>
+  <img alt="Domain" src="https://img.shields.io/badge/domain-defense%20data%20science-1E293B"/>
+</p>
 
 ---
 
-## Módulos
+## 🎯 Visão Geral
 
-| Módulo | Responsabilidade | Contrato |
+O **VANGUARD** é um projeto de Iniciação Científica (UNIFEI) focado em **Ciência de Dados Aplicada à Defesa**.
+O objetivo é transformar detecções de visão computacional em eventos operacionais no padrão **CoT (Cursor on Target)**,
+com transmissão resiliente por múltiplos transportes (4G, Wi-Fi tático e LoRa/Meshtastic).
+
+---
+
+## 🧭 Navegação Rápida
+
+- [Arquitetura de Alto Nível](#-arquitetura-de-alto-nível)
+- [Módulos do Sistema](#-módulos-do-sistema)
+- [Sistema de Gerência de Skills](#-sistema-de-gerência-de-skills)
+- [Estrutura do Repositório](#-estrutura-do-repositório)
+- [Quickstart](#-quickstart)
+- [Governança Técnica](#-governança-técnica)
+
+---
+
+## 🏗️ Arquitetura de Alto Nível
+
+```mermaid
+flowchart LR
+    A[VG-VISION\nEdge Inference\nTFLite/ONNX] --> B[VG-CORE\nCoT Engine\nJSON -> XML ATAK]
+    B --> C[VG-COMM\nHybrid Gateway\n4G/Wi-Fi/LoRa]
+    D[VG-LAB\nTeacher -> Student Distillation] --> A
+    E[(FTS-Core\nPostgreSQL)] <---> C
+    F[(LTM\nSQLite)] <---> A
+```
+
+---
+
+## 🧩 Módulos do Sistema
+
+| Módulo | Papel | Contrato de Interface |
 |---|---|---|
-| **VG-VISION** | Inferência TFLite/ONNX (Edge) | `Stream → List[BoundingBox]` |
-| **VG-CORE** | Motor de Conversão CoT (Cursor on Target) | `BoundingBox JSON → XML-CoT (ATAK)` |
-| **VG-COMM** | Gateway Híbrido (4G / Wi-Fi / LoRa) | `CoT-Packet → PriorityQueue → Network` |
-| **VG-LAB** | Pipeline de Destilação (Teacher → Student) | `RawData → AutoLabeling → DistilledModel` |
+| **VG-VISION** | Inferência em Edge | `Stream RGB -> List[BoundingBox] (JSON)` |
+| **VG-CORE** | Conversão para padrão ATAK/CoT | `BoundingBox JSON -> XML-CoT` |
+| **VG-COMM** | Entrega híbrida resiliente | `CoT -> Priority Queue -> Network` |
+| **VG-LAB** | Distilação de conhecimento (Teacher/Student) | `Raw Data -> AutoLabeling -> Distilled Model` |
 
-## Documentação
+---
 
-- [`GOVERNANCA.md`](GOVERNANCA.md) — Arquitetura de Governança Central (V.1.0)
-- [`CLAUDE.md`](CLAUDE.md) — Especificação Técnica Ativa (Lei do Projeto)
+## 🧠 Sistema de Gerência de Skills
 
-## Sistema de Gerência de Skills
+As skills seguem contrato obrigatório:
 
-Estrutura criada com base no toolkit da imagem solicitada:
-
-- **Core Toolkit:** `docx`, `xlsx`, `pdf`, `pdf-reading`, `pptx`, `frontend-design`, `file-reading`
-- **Power-User:** `skill-creator`, `mcp-builder`, `web-artifacts-builder`
-
-Arquivos:
 - `skills/<skill-id>/SKILL.md`
-- `vanguard/services/skill-manager/skill_manager.py` (registro e validação)
-- `vanguard/tests/test_skill_manager.py`
+- Registro central: `vanguard/services/skill-manager/skill_manager.py`
+- Validação: `vanguard/tests/test_skill_manager.py`
 
-## Início Rápido
+### Core Toolkit
+`docx` • `xlsx` • `pdf` • `pdf-reading` • `pptx` • `frontend-design` • `file-reading`
+
+### Power-User
+`skill-creator` • `mcp-builder` • `web-artifacts-builder`
+
+---
+
+## 📦 Estrutura do Repositório
+
+```text
+VANGUARD-DEFENSE/
+├─ vanguard/
+│  ├─ services/
+│  │  ├─ vg-vision/
+│  │  ├─ vg-core/
+│  │  ├─ vg-comm/
+│  │  └─ skill-manager/
+│  ├─ research/
+│  │  └─ lab-distillation/
+│  └─ tests/
+├─ skills/
+├─ docker-compose.yml
+├─ GOVERNANCA.md
+└─ CLAUDE.md
+```
+
+---
+
+## ⚡ Quickstart
 
 ```bash
-# Instalar dependências de desenvolvimento
+# 1) Instalar dependências
 pip install -r requirements-dev.txt
 
-# Executar testes
-pytest vanguard/tests/ -v
-
-# Configurar variáveis de ambiente locais
+# 2) Configurar variáveis locais
 cp .env.example .env
 
-# Subir ambiente de laboratório (requer NVIDIA Docker)
+# 3) Rodar testes
+pytest vanguard/tests/ -v --cov=vanguard
+
+# 4) Subir ambiente de laboratório (NVIDIA Docker)
 docker-compose up vg-lab
 ```
 
-## Filosofia
+Para integração CoT com FreeTAKServer:
 
-Este projeto segue o princípio **Anti-Vibe Coding (Akita Way)**: toda sugestão de IA é validada
-contra a especificação técnica antes de entrar em produção. Documentação é código.
+```bash
+docker-compose up freetakserver
+```
+
+---
+
+## 🧱 Governança Técnica
+
+- [`CLAUDE.md`](./CLAUDE.md) — Especificação Técnica Ativa (Lei do Projeto)
+- [`GOVERNANCA.md`](./GOVERNANCA.md) — Arquitetura de Governança Central
+
+Princípio-chave: **Anti-Vibe Coding (Akita Way)**.
+Toda mudança arquitetural deve ser refletida na documentação antes da implementação.
+
+---
+
+<p align="center"><i>VANGUARD — UNIFEI — 2026</i></p>
