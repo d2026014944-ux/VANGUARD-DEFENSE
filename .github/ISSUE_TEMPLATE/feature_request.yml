@@ -1,0 +1,34 @@
+name: Feature request
+description: Propor nova funcionalidade técnica para o VANGUARD
+title: "[FEATURE] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema que a feature resolve
+      description: Qual limitação atual está sendo atacada?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta de solução
+      description: Descreva o comportamento esperado.
+    validations:
+      required: true
+  - type: textarea
+    id: contracts
+    attributes:
+      label: Impacto em contratos (Schema-First)
+      description: Informe se altera JSON schema, XSD CoT ou OpenAPI.
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Estratégia de testes
+      description: Liste os testes unitários e/ou integração esperados.
+    validations:
+      required: true

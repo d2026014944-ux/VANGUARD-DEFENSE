@@ -1,0 +1,42 @@
+name: Bug report
+description: Reportar um defeito técnico no VANGUARD
+title: "[BUG] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Resumo
+      description: Descreva o problema observado de forma objetiva.
+      placeholder: O sistema falha ao converter detecções em CoT...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Liste os passos para reproduzir o comportamento.
+      placeholder: |
+        1. Executar ...
+        2. Enviar ...
+        3. Observar ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado atual
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs e evidências
+      description: Inclua stack trace, trecho de XML/JSON e ambiente.

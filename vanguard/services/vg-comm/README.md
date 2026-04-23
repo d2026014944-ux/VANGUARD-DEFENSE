@@ -5,6 +5,7 @@
 ## Contrato de Interface
 - **Input:** Pacote XML-CoT validado pelo VG-CORE
 - **Output:** Entrega via rede com fila de prioridade
+- **Schema:** `vanguard/contracts/cot-event.xsd`
 
 ## Transportes Suportados
 - **4G** — Cobertura principal

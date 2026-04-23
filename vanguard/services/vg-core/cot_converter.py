@@ -10,6 +10,7 @@ import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import List, Optional
 from xml.etree import ElementTree as ET
 
@@ -61,6 +62,11 @@ class VGCoreConverter:
     # ATAK/CoT convention for unknown CE/LE uses a very high sentinel value.
     # Mantemos 9999999.0 para indicar "erro de localização desconhecido".
     UNKNOWN_ERROR_VALUE = 9999999.0
+    REQUIRED_EVENT_ATTRS = ("version", "uid", "type", "time", "start", "stale", "how")
+    REQUIRED_POINT_ATTRS = ("lat", "lon", "hae", "ce", "le")
+    CONTRACT_XSD_PATH = (
+        Path(__file__).resolve().parents[2] / "contracts" / "cot-event.xsd"
+    )
 
     def __init__(self, stale_seconds: int = 30):
         self.stale_seconds = stale_seconds
@@ -139,6 +145,82 @@ class VGCoreConverter:
         xml_str = ET.tostring(event, encoding="unicode", xml_declaration=False)
         return xml_str
 
+    def validate_cot_xml_contract(self, xml_str: str) -> bool:
+        """
+        Mandatory contract validation before VG-COMM dispatch.
+        Prioritizes full XSD validation when `lxml` is available;
+        otherwise performs structural and semantic fallback validation.
+        """
+        if not self.CONTRACT_XSD_PATH.exists():
+            logger.error("Contrato XSD não encontrado em %s", self.CONTRACT_XSD_PATH)
+            return False
+
+        try:
+            ET.parse(self.CONTRACT_XSD_PATH)
+        except ET.ParseError as exc:
+            logger.error("Contrato XSD inválido: %s", exc)
+            return False
+
+        try:
+            from lxml import etree as lxml_etree  # type: ignore
+        except ImportError:
+            logger.debug("lxml unavailable; using structural CoT validation fallback.")
+        else:
+            try:
+                xsd_doc = lxml_etree.parse(str(self.CONTRACT_XSD_PATH))
+                schema = lxml_etree.XMLSchema(xsd_doc)
+                xml_doc = lxml_etree.fromstring(xml_str.encode("utf-8"))
+                if not schema.validate(xml_doc):
+                    return False
+            except (
+                lxml_etree.XMLSyntaxError,
+                lxml_etree.XMLSchemaParseError,
+                lxml_etree.DocumentInvalid,
+                ValueError,
+            ) as exc:
+                logger.error("XSD validation failure with lxml: %s", exc)
+                return False
+
+        try:
+            root = ET.fromstring(xml_str)
+        except ET.ParseError as exc:
+            logger.error("XML-CoT malformado: %s", exc)
+            return False
+
+        if root.tag != "event":
+            return False
+
+        for attr in self.REQUIRED_EVENT_ATTRS:
+            if not root.get(attr):
+                return False
+
+        point = root.find("point")
+        detail = root.find("detail")
+        if point is None or detail is None:
+            return False
+
+        for attr in self.REQUIRED_POINT_ATTRS:
+            if point.get(attr) is None:
+                return False
+
+        try:
+            lat = float(point.get("lat"))
+            lon = float(point.get("lon"))
+            float(point.get("hae"))
+            float(point.get("ce"))
+            float(point.get("le"))
+        except (TypeError, ValueError):
+            return False
+
+        if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
+            return False
+
+        contact = detail.find("contact")
+        if contact is None or not contact.get("callsign"):
+            return False
+
+        return True
+
     def convert(self, box: BoundingBox) -> Optional[str]:
         """
         Pipeline completo: BoundingBox → XML-CoT.
@@ -149,6 +231,9 @@ class VGCoreConverter:
             return None
         try:
             xml_str = self.cot_packet_to_xml(packet)
+            if not self.validate_cot_xml_contract(xml_str):
+                logger.error("XML-CoT rejeitado por validação de contrato.")
+                return None
             logger.debug("CoT gerado: uid=%s type=%s", packet.uid, packet.cot_type)
             return xml_str
         except ValueError as exc:
