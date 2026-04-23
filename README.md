@@ -27,6 +27,7 @@ com transmissão resiliente por múltiplos transportes (4G, Wi-Fi tático e LoRa
 - [Arquitetura de Alto Nível](#-arquitetura-de-alto-nível)
 - [Módulos do Sistema](#-módulos-do-sistema)
 - [Sistema de Gerência de Skills](#-sistema-de-gerência-de-skills)
+- [Contratos Schema-First](#-contratos-schema-first)
 - [Estrutura do Repositório](#-estrutura-do-repositório)
 - [Quickstart](#-quickstart)
 - [Governança Técnica](#-governança-técnica)
@@ -73,6 +74,14 @@ As skills seguem contrato obrigatório:
 
 ---
 
+## 📐 Contratos Schema-First
+
+- JSON Schema de detecções VG-VISION: `vanguard/contracts/detection.schema.json`
+- XSD de evento CoT VG-CORE/VG-COMM: `vanguard/contracts/cot-event.xsd`
+- OpenAPI (Swagger): `docs/openapi/vanguard-api.yaml`
+
+---
+
 ## 📦 Estrutura do Repositório
 
 ```text
@@ -83,13 +92,17 @@ VANGUARD-DEFENSE/
 │  │  ├─ vg-core/
 │  │  ├─ vg-comm/
 │  │  └─ skill-manager/
+│  ├─ contracts/
 │  ├─ research/
 │  │  └─ lab-distillation/
 │  └─ tests/
+├─ docs/
+│  └─ openapi/
 ├─ skills/
 ├─ docker-compose.yml
 ├─ GOVERNANCA.md
-└─ CLAUDE.md
+├─ CLAUDE.md
+└─ .github/workflows/ci.yml
 ```
 
 ---

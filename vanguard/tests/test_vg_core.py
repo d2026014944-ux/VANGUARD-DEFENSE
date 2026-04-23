@@ -239,3 +239,18 @@ class TestConvertPipeline:
         root1 = ET.fromstring(xml1)
         root2 = ET.fromstring(xml2)
         assert root1.get("uid") != root2.get("uid")
+
+    def test_validate_cot_contract_rejects_invalid_latitude(self, converter):
+        packet = CotPacket(
+            uid="VANGUARD-invalid-lat",
+            cot_type="a-h-G",
+            lat=120.0,
+            lon=-43.1729,
+            hae=850.0,
+            time="2026-03-26T12:00:00.000Z",
+            start="2026-03-26T12:00:00.000Z",
+            stale="2026-03-26T12:00:30.000Z",
+            detail="person conf=0.90",
+        )
+        xml_str = converter.cot_packet_to_xml(packet)
+        assert converter.validate_cot_xml_contract(xml_str) is False

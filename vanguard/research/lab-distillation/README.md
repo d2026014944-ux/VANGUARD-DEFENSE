@@ -21,3 +21,7 @@ Todo treinamento ocorre dentro de Docker Containers isolados. **Proibido instala
 
 ## Output
 Modelo Estudante convertido para `.tflite` / `.onnx`, pronto para deploy Edge via VG-VISION.
+
+## Artefatos iniciais do pipeline
+- `quantization_pipeline.py`: trilha de quantização INT8 com critérios de aceitação e benchmark metadata.
+- `auto_labeling.py`: auto-labeling Teacher + persistência no PostgreSQL com PostGIS.

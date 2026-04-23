@@ -5,6 +5,7 @@
 ## Contrato de Interface
 - **Input:** Stream de câmera (frames RGB)
 - **Output:** `List[BoundingBox(class, confidence, location)]` serializado em JSON → VG-CORE
+- **Schema:** `vanguard/contracts/detection.schema.json`
 
 ## Hardware Alvo
 - Android (NPU via TensorFlow Lite)
@@ -12,3 +13,6 @@
 
 ## Restrição
 O modelo deve estar no formato `.tflite` ou `.onnx`. Nenhum modelo PyTorch bruto roda na ponta.
+
+## Runtime principal
+- ONNX Runtime é o caminho padrão para agnosticismo de hardware (NVIDIA/Intel/Snapdragon).
